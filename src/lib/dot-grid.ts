@@ -7,8 +7,8 @@
  *    on touch devices. It refreshes on mouse movement, scrolling and resizing.
  *  - a sideways egg-shaped gradient with visible contour lines sits above the whole page
  *    (between the cursor and everything else). It is centred on the first word of the line
- *    halfway between the top of the screen and the cursor line, or on the story's first word
- *    while there is no cursor.
+ *    just below the one halfway between the top of the screen and the cursor line, or on the
+ *    story's second line while there is no cursor.
  *
  * Dots are painted on a canvas only when the layout changes. Blackout bars are plain elements
  * toggled on and off, and the egg is a small full-screen canvas, so mouse movement and
@@ -133,8 +133,9 @@ export function paintEgg(canvas: HTMLCanvasElement, colorSource: Element, cx: nu
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
-  const a = Math.min(560, Math.max(220, width * 0.35)); // outer horizontal radius
-  const b = a * 0.5; // outer vertical radius
+  // Wide and low: about three times as wide as it is tall.
+  const a = Math.min(900, Math.max(300, width * 0.55)); // outer horizontal radius
+  const b = Math.min(560, Math.max(220, width * 0.35)) * 0.5; // outer vertical radius
   ctx.fillStyle = ctx.strokeStyle = cssColor(colorSource, "--accent", "#ff8a5c");
 
   // Gradient: each band adds a little colour, so it deepens toward the word.
@@ -311,11 +312,11 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
       showFrom(lo);
     }
 
-    // Egg: the first word of the line nearest the point halfway between the top of the
-    // screen and the cursor line; the story's first word while there is no cursor.
+    // Egg: one line below the line nearest the point halfway between the top of the screen
+    // and the cursor line (the story's first line while there is no cursor), on its first word.
     const lines = layout.lines;
     if (lines.length === 0) return;
-    let line = 0;
+    let middle = 0;
     if (clientY !== null) {
       const target = clientY / 2 - originY;
       let best = Infinity;
@@ -323,10 +324,11 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
         const distance = Math.abs(lines[i].y + lines[i].h / 2 - target);
         if (distance < best) {
           best = distance;
-          line = i;
+          middle = i;
         }
       }
     }
+    const line = Math.min(middle + 1, lines.length - 1);
     const first = lines[line].first;
     const cx = originX + first.x + first.w / 2;
     const cy = originY + first.y + first.h / 2;
