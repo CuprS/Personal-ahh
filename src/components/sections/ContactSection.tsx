@@ -2,6 +2,11 @@ import { ContactForm } from "@/components/ContactForm";
 import { Section } from "@/components/Section";
 import { site } from "@/lib/site";
 
+const directContacts = [
+  { label: "Email", value: site.email, href: `mailto:${site.email}` },
+  { label: "Phone", value: site.phone, href: `tel:+1${site.phone.replace(/\D/g, "")}` },
+];
+
 export function ContactSection() {
   return (
     <Section id="contact" eyebrow="Contact" title={<>Let&apos;s make something <em>together</em></>}>
@@ -12,20 +17,22 @@ export function ContactSection() {
             find me on any of these.
           </p>
           <ul className="mt-8 flex flex-col gap-3">
-            <li>
-              <a
-                href={`mailto:${site.email}`}
-                className="group flex items-center justify-between rounded-xl border border-border bg-surface px-5 py-4 transition-colors hover:border-accent"
-              >
-                <span>
-                  <span className="block text-xs text-muted">Email</span>
-                  <span className="font-medium">{site.email}</span>
-                </span>
-                <span aria-hidden className="text-accent transition-transform group-hover:translate-x-1">
-                  →
-                </span>
-              </a>
-            </li>
+            {directContacts.map((contact) => (
+              <li key={contact.label}>
+                <a
+                  href={contact.href}
+                  className="group flex items-center justify-between rounded-xl border border-border bg-surface px-5 py-4 transition-colors hover:border-accent"
+                >
+                  <span>
+                    <span className="block text-xs text-muted">{contact.label}</span>
+                    <span className="font-medium">{contact.value}</span>
+                  </span>
+                  <span aria-hidden className="text-accent transition-transform group-hover:translate-x-1">
+                    →
+                  </span>
+                </a>
+              </li>
+            ))}
             {site.socials.map((social) => (
               <li key={social.href}>
                 <a

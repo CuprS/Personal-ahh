@@ -15,7 +15,7 @@ export type SocialLink = {
 };
 
 export const site = {
-  name: "Your Name",
+  name: "Cooper Stone",
   role: "Communications & Tech Consultant",
   tagline: "I build things for the web and chase ideas until they turn into something real.",
   description:
@@ -47,7 +47,8 @@ export const site = {
     },
   ] satisfies Idea[],
 
-  email: "you@example.com",
+  email: "copperstone@outlook.com",
+  phone: "(307) 333-3251",
   socials: [
     { label: "GitHub", href: "https://github.com/CuprS" },
     { label: "LinkedIn", href: "https://www.linkedin.com/" },
