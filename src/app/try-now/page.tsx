@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { DotGridStory } from "@/components/DotGridStory";
 import { PageIntro } from "@/components/PageIntro";
 
 export const metadata: Metadata = {
   title: "Try Now",
-  description: "Interactive demos and experiments. Coming soon.",
+  description: "Interactive demos and experiments.",
 };
+
+const story =
+  "This internship gives Barstow College students hands-on experience at a museum dedicated to the history and culture of the Mojave River. The intern compiles bookstore orders accurately and on time, completes sales, keeps inventory records current, and keeps the bookstore and front desk areas clean and organized. They greet patrons warmly and help them readily, and they bring real curiosity about the Mojave River region, both learning about it and sharing it with visitors. As needed, the intern also helps docents and board members with general tasks related to curating and maintaining exhibits.";
 
 export default function TryNowPage() {
   return (
@@ -15,21 +18,7 @@ export default function TryNowPage() {
       </PageIntro>
 
       <div className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-8">
-        <div className="flex flex-col items-center rounded-3xl border border-dashed border-border bg-surface/50 px-6 py-20 text-center">
-          <span aria-hidden className="font-display text-6xl text-accent italic">
-            soon
-          </span>
-          <h2 className="mt-6 text-2xl font-semibold tracking-tight">Nothing to try yet</h2>
-          <p className="mt-3 max-w-md text-muted">
-            I&apos;m cooking up demos for this page. Check out my contributions in the meantime.
-          </p>
-          <Link
-            href="/contributions"
-            className="mt-8 rounded-full bg-foreground px-6 py-3 font-semibold text-background transition-transform hover:-translate-y-0.5"
-          >
-            See contributions
-          </Link>
-        </div>
+        <DotGridStory text={story} credit="Translated by Cooper Stone, 2020" />
       </div>
     </>
   );
