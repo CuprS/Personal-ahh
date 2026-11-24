@@ -16,7 +16,7 @@ export type SocialLink = {
 
 export const site = {
   name: "Your Name",
-  role: "Developer & creative tinkerer",
+  role: "Communications & Tech Consultant",
   tagline: "I build things for the web and chase ideas until they turn into something real.",
   description:
     "Portfolio of work, contributions and creative experiments. Replace this with a one-line description of yourself.",
