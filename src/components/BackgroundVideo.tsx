@@ -1,47 +1,50 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { watchBackgroundVideo } from "@/lib/background-video";
 import type { BackgroundVideoConfig } from "@/lib/site";
 
 /**
- * A muted, looping video fixed behind the page. Content scrolls over it; a dusk-coloured
- * scrim keeps text readable. Paused for visitors who prefer reduced motion.
+ * A muted, looping video behind the landing page, centred on the hero's "Scroll" cue.
+ * It scrolls with the page and fades into the gradient at its top and bottom edges.
+ * Placement, crop choice and playback live in src/lib/background-video.ts.
  */
-export function BackgroundVideo({ src, type, poster }: BackgroundVideoConfig) {
-  const ref = useRef<HTMLVideoElement>(null);
+export function BackgroundVideo({
+  landscape,
+  portrait,
+  landscapePoster,
+  portraitPoster,
+  opacity = 0.35,
+}: BackgroundVideoConfig) {
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const video = ref.current;
-    if (!video) return;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => {
-      // React doesn't put `muted` in the server HTML, and phones only autoplay muted video,
-      // so set it here and start playback ourselves.
-      video.muted = true;
-      if (reduceMotion.matches) video.pause();
-      else video.play().catch(() => {});
-    };
-    sync();
-    reduceMotion.addEventListener("change", sync);
-    return () => reduceMotion.removeEventListener("change", sync);
+    if (!ref.current) return;
+    return watchBackgroundVideo(ref.current);
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-[-1] overflow-hidden">
+    <div
+      ref={ref}
+      aria-hidden
+      data-bg-video-layer
+      data-anchor="[data-scroll-cue]"
+      className="bg-video-layer pointer-events-none absolute inset-x-0 z-[-1] h-svh overflow-hidden"
+    >
       <video
-        ref={ref}
         data-bg-video
+        data-src-landscape={landscape}
+        data-src-portrait={portrait}
+        data-poster-landscape={landscapePoster}
+        data-poster-portrait={portraitPoster}
         className="size-full object-cover"
+        style={{ opacity }}
         autoPlay
         muted
         loop
         playsInline
         preload="auto"
-        poster={poster}
-      >
-        <source src={src} type={type} />
-      </video>
-      <div className="video-scrim absolute inset-0" />
+      />
     </div>
   );
 }

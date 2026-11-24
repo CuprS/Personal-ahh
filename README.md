@@ -41,13 +41,21 @@ Colours are CSS variables at the top of **`src/app/globals.css`**: one dark "des
 
 ### Background video (landing page)
 
-A short muted video can loop behind the landing page, under a dusk-coloured scrim that keeps text readable. Put the file in `public/` (for example `public/background.mp4`), then set it in `src/lib/site.ts`:
+A muted video loops behind the landing page at 35% opacity. It is centred on the hero's "Scroll" cue, scrolls with the page, and fades into the gradient at its top and bottom edges. Portrait screens (phones held upright) get a portrait crop; everything else gets a landscape crop.
+
+The files live in `public/videos/` and are set in `src/lib/site.ts`:
 
 ```ts
-backgroundVideo: { src: "/background.mp4", type: "video/mp4" },
+backgroundVideo: {
+  landscape: "/videos/bison-rider-landscape.mp4",
+  portrait: "/videos/bison-rider-portrait.mp4",
+  landscapePoster: "/videos/bison-rider-landscape.jpg",
+  portraitPoster: "/videos/bison-rider-portrait.jpg",
+  opacity: 0.35,
+},
 ```
 
-Keep it short (5–15 s) and small (under ~5 MB); MP4 (H.264) plays on every phone and browser. It pauses for visitors who have reduced motion turned on.
+To swap the video, make a landscape and a portrait crop (MP4 / H.264, no audio, around 30 fps, a few MB each) and point to them; set `backgroundVideo: null` to turn it off. It pauses for visitors who have reduced motion turned on.
 
 ### Adding a contribution
 

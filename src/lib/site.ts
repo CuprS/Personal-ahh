@@ -10,12 +10,15 @@ export type Idea = {
 };
 
 export type BackgroundVideoConfig = {
-  /** Path of a file in /public, e.g. "/background.mp4". */
-  src: string;
-  /** e.g. "video/mp4" or "video/webm". */
-  type?: string;
-  /** Optional still image shown while the video loads. */
-  poster?: string;
+  /** Landscape crop for desktops, laptops and phones held sideways (path in /public). */
+  landscape: string;
+  /** Portrait crop for phones held upright (path in /public). Falls back to `landscape`. */
+  portrait?: string;
+  /** Still images shown while each video loads. */
+  landscapePoster?: string;
+  portraitPoster?: string;
+  /** 0 to 1. The gradient shows through the rest. */
+  opacity?: number;
 };
 
 export const site = {
@@ -55,9 +58,14 @@ export const site = {
   // CONTACT_TO_EMAIL in the environment overrides it.
   email: "copperstone@outlook.com",
 
-  // Short looping video that plays behind the landing page (muted, starts on its own).
-  // Put the file in /public and point to it, for example:
-  //   backgroundVideo: { src: "/background.mp4", type: "video/mp4" },
-  // Keep it short (5–15 s) and small (under ~5 MB). MP4 (H.264) plays on every device.
-  backgroundVideo: null as BackgroundVideoConfig | null,
+  // Looping video behind the landing page, centred on the "Scroll" cue and scrolling past
+  // to reveal the gradient. Set to null to turn it off. Keep files short and small
+  // (MP4 / H.264 plays on every device).
+  backgroundVideo: {
+    landscape: "/videos/bison-rider-landscape.mp4",
+    portrait: "/videos/bison-rider-portrait.mp4",
+    landscapePoster: "/videos/bison-rider-landscape.jpg",
+    portraitPoster: "/videos/bison-rider-portrait.jpg",
+    opacity: 0.35,
+  } as BackgroundVideoConfig | null,
 };

@@ -15,14 +15,6 @@
   --accent: #ff8a5c;
   --accent-foreground: #1a0f14;
   --gradient-dusk: linear-gradient(180deg, #120d1a 0%, #24142a 35%, #3a1a24 70%, #5a2614 100%);
-  /* Laid over the background video so text stays readable and the dusk colours carry through. */
-  --scrim-dusk: linear-gradient(
-    180deg,
-    rgb(18 13 26 / 0.82) 0%,
-    rgb(36 20 42 / 0.72) 35%,
-    rgb(58 26 36 / 0.72) 70%,
-    rgb(90 38 20 / 0.8) 100%
-  );
 }
 
 @theme inline {
@@ -61,8 +53,14 @@ body {
   background: var(--gradient-dusk);
 }
 
-.video-scrim {
-  background: var(--scrim-dusk);
+/*
+ * Landing-page video layer: one screen tall, centred on the hero's "Scroll" cue (the script
+ * fine-tunes `top`), scrolling with the page and fading into the gradient at top and bottom.
+ */
+.bg-video-layer {
+  top: calc(50svh - 4rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
 }
 
 /* ---------- Side drawer animations (driven by Radix data-state) ---------- */

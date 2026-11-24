@@ -36,6 +36,7 @@ export function Hero() {
 
       <a
         href="#about"
+        data-scroll-cue
         className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-xs tracking-[0.2em] text-muted uppercase transition-colors hover:text-foreground"
       >
         Scroll
