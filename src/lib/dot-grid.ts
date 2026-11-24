@@ -5,9 +5,14 @@
  *  - every word lower on the screen than the cursor line is blacked out with its own bar.
  *    The cursor line is the mouse on devices that can hover, and the middle of the screen
  *    on touch devices. It refreshes on mouse movement, scrolling and resizing.
+ *  - a sideways egg-shaped gradient with visible contour lines sits above the whole page
+ *    (between the cursor and everything else). It is centred on the first word of the line
+ *    halfway between the top of the screen and the cursor line, or on the story's first word
+ *    while there is no cursor.
  *
  * Dots are painted on a canvas only when the layout changes. Blackout bars are plain elements
- * toggled on and off, so mouse movement and scrolling stay cheap even for long texts.
+ * toggled on and off, and the egg is a small full-screen canvas, so mouse movement and
+ * scrolling stay cheap even for long texts.
  *
  * Plain DOM code with no React, so the static preview can reuse it as-is.
  * Words are elements marked with `data-word` inside the root element.
@@ -20,18 +25,40 @@ export const WORD_STEP = 4;
 /** Canvas pixel budget. iOS Safari refuses to draw canvases above about 16.7M pixels. */
 const MAX_CANVAS_PIXELS = 12000000;
 
-type Box = { x: number; y: number; w: number; h: number };
+/** Number of contour lines in the egg gradient. */
+const EGG_RINGS = 8;
+
+type Box = { x: number; y: number; w: number; h: number; word: string };
+/** A visual line of text: its top, height and leftmost word box. */
+type Line = { y: number; h: number; first: Box };
 
 export type DotGridLayout = {
   width: number;
   height: number;
   /** Word boxes relative to the root's padding box (unaffected by scrolling). */
   boxes: Box[];
+  /** Visual lines, top to bottom. */
+  lines: Line[];
   cols: number;
   rows: number;
   offsetX: number;
   offsetY: number;
 };
+
+/** Group word boxes into visual lines (same top, within 2px) and keep each line's leftmost box. */
+function groupLines(boxes: Box[]): Line[] {
+  const sorted = [...boxes].sort((p, q) => p.y - q.y);
+  const lines: Line[] = [];
+  for (const b of sorted) {
+    const last = lines[lines.length - 1];
+    if (last && Math.abs(b.y - last.y) <= 2) {
+      if (b.x < last.first.x) last.first = b;
+    } else {
+      lines.push({ y: b.y, h: b.h, first: b });
+    }
+  }
+  return lines;
+}
 
 function cssColor(el: Element, name: string, fallback: string): string {
   return getComputedStyle(el).getPropertyValue(name).trim() || fallback;
@@ -53,7 +80,7 @@ export function measureDotGrid(root: HTMLElement): DotGridLayout | null {
     let found = false;
     for (const r of Array.from(word.getClientRects())) {
       if (r.width < 1 || r.height < 1) continue;
-      boxes.push({ x: r.left - left, y: r.top - top, w: r.width, h: r.height });
+      boxes.push({ x: r.left - left, y: r.top - top, w: r.width, h: r.height, word: word.textContent ?? "" });
       found = true;
     }
     if (found) wordsCovered++;
@@ -71,7 +98,61 @@ export function measureDotGrid(root: HTMLElement): DotGridLayout | null {
   root.dataset.gridCols = String(cols);
   root.dataset.gridRows = String(rows);
   root.dataset.gridOffset = `${offsetX} ${offsetY}`;
-  return { width, height, boxes, cols, rows, offsetX, offsetY };
+  return { width, height, boxes, lines: groupLines(boxes), cols, rows, offsetX, offsetY };
+}
+
+/** Trace a sideways egg: broad on the left, narrowing to the right, centred on (cx, cy). */
+function eggPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, a: number, b: number): void {
+  const taper = 0.3;
+  const steps = 96;
+  ctx.moveTo(cx + a, cy);
+  for (let i = 1; i <= steps; i++) {
+    const t = (i / steps) * Math.PI * 2;
+    ctx.lineTo(cx + a * Math.cos(t), cy + b * Math.sin(t) * (1 - taper * Math.cos(t)));
+  }
+  ctx.closePath();
+}
+
+/**
+ * Paint the egg gradient on a full-screen canvas: banded fills that build up toward the centre,
+ * plus a visible contour line around each band. (cx, cy) are viewport coordinates.
+ */
+export function paintEgg(canvas: HTMLCanvasElement, colorSource: Element, cx: number, cy: number): void {
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  if (width === 0 || height === 0) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const pixelWidth = Math.round(width * dpr);
+  const pixelHeight = Math.round(height * dpr);
+  if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+  }
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  const a = Math.min(560, Math.max(220, width * 0.35)); // outer horizontal radius
+  const b = a * 0.5; // outer vertical radius
+  ctx.fillStyle = ctx.strokeStyle = cssColor(colorSource, "--accent", "#ff8a5c");
+
+  // Gradient: each band adds a little colour, so it deepens toward the word.
+  ctx.globalAlpha = 0.06;
+  for (let i = EGG_RINGS; i >= 1; i--) {
+    ctx.beginPath();
+    eggPath(ctx, cx, cy, (a * i) / EGG_RINGS, (b * i) / EGG_RINGS);
+    ctx.fill();
+  }
+  // Contour lines: brightest near the word, fading outward.
+  ctx.lineWidth = 1.25;
+  for (let i = 1; i <= EGG_RINGS; i++) {
+    ctx.globalAlpha = 0.8 - (0.5 * (i - 1)) / (EGG_RINGS - 1);
+    ctx.beginPath();
+    eggPath(ctx, cx, cy, (a * i) / EGG_RINGS, (b * i) / EGG_RINGS);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
 }
 
 /** Paint the margin grid and the dots on every word. */
@@ -153,6 +234,15 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
   let barTops: number[] = [];
   let firstBlacked = 0; // bars[firstBlacked..] are shown
 
+  // Egg gradient: a full-screen canvas above everything on the page (it ignores clicks).
+  const egg = document.createElement("canvas");
+  egg.setAttribute("aria-hidden", "true");
+  egg.dataset.eggGradient = "";
+  egg.style.cssText =
+    "position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:60;mix-blend-mode:screen;display:none";
+  document.body.appendChild(egg);
+  let lastEgg = "";
+
   let layout: DotGridLayout | null = null;
   let needsMeasure = true;
   let mouseY: number | null = null;
@@ -194,22 +284,61 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
         buildBars(layout.boxes);
       }
     }
-    if (!layout) return; // hidden; the resize observer re-measures when it shows again
-    const clientY = cursorClientY();
-    if (clientY === null) {
-      showFrom(bars.length);
+    if (!layout) {
+      // Hidden; the resize observer re-measures when it shows again.
+      egg.style.display = "none";
+      lastEgg = "";
       return;
     }
-    const cutoff = clientY - (root.getBoundingClientRect().top + root.clientTop);
-    // First bar whose top is at or below the cursor line (binary search; barTops is sorted).
-    let lo = 0;
-    let hi = barTops.length;
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (barTops[mid] >= cutoff) hi = mid;
-      else lo = mid + 1;
+    const rect = root.getBoundingClientRect();
+    const originX = rect.left + root.clientLeft;
+    const originY = rect.top + root.clientTop;
+    const clientY = cursorClientY();
+
+    // Blackout: bars from the first one whose top is at or below the cursor line
+    // (binary search; barTops is sorted).
+    if (clientY === null) {
+      showFrom(bars.length);
+    } else {
+      const cutoff = clientY - originY;
+      let lo = 0;
+      let hi = barTops.length;
+      while (lo < hi) {
+        const mid = (lo + hi) >> 1;
+        if (barTops[mid] >= cutoff) hi = mid;
+        else lo = mid + 1;
+      }
+      showFrom(lo);
     }
-    showFrom(lo);
+
+    // Egg: the first word of the line nearest the point halfway between the top of the
+    // screen and the cursor line; the story's first word while there is no cursor.
+    const lines = layout.lines;
+    if (lines.length === 0) return;
+    let line = 0;
+    if (clientY !== null) {
+      const target = clientY / 2 - originY;
+      let best = Infinity;
+      for (let i = 0; i < lines.length; i++) {
+        const distance = Math.abs(lines[i].y + lines[i].h / 2 - target);
+        if (distance < best) {
+          best = distance;
+          line = i;
+        }
+      }
+    }
+    const first = lines[line].first;
+    const cx = originX + first.x + first.w / 2;
+    const cy = originY + first.y + first.h / 2;
+    egg.style.display = "block";
+    const key = `${cx.toFixed(1)} ${cy.toFixed(1)} ${egg.clientWidth}x${egg.clientHeight}`;
+    if (key !== lastEgg) {
+      lastEgg = key;
+      paintEgg(egg, root, cx, cy);
+      egg.dataset.anchorLine = String(line);
+      egg.dataset.anchorWord = first.word;
+      egg.dataset.center = `${cx.toFixed(1)} ${cy.toFixed(1)}`;
+    }
   };
 
   const schedule = () => {
@@ -259,5 +388,6 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
     window.removeEventListener("scroll", schedule, { capture: true });
     window.removeEventListener("resize", schedule);
     layer.remove();
+    egg.remove();
   };
 }
