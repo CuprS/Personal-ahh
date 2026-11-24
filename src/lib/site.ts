@@ -49,8 +49,7 @@ export const site = {
 
   email: "copperstone@outlook.com",
   phone: "(307) 333-3251",
-  socials: [
-    { label: "GitHub", href: "https://github.com/CuprS" },
-    { label: "LinkedIn", href: "https://www.linkedin.com/" },
-  ] satisfies SocialLink[],
+  // Extra links shown under Email/Phone in the contact section, e.g.
+  // { label: "LinkedIn", href: "https://www.linkedin.com/in/your-profile" }
+  socials: [] as SocialLink[],
 };
