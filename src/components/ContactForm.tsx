@@ -30,7 +30,12 @@ export function ContactForm() {
         />
       </Field>
 
-      <Field id="email" label="Email" error={errors.email?.[0]}>
+      <Field
+        id="email"
+        label="Email"
+        hint="I'll reply to this address."
+        error={errors.email?.[0]}
+      >
         <input
           id="email"
           name="email"
@@ -41,7 +46,7 @@ export function ContactForm() {
           placeholder="ada@example.com"
           defaultValue={state.values?.email}
           aria-invalid={errors.email ? true : undefined}
-          aria-describedby={errors.email ? "email-error" : undefined}
+          aria-describedby={errors.email ? "email-hint email-error" : "email-hint"}
           className={inputClass}
         />
       </Field>
@@ -78,7 +83,7 @@ export function ContactForm() {
         <p
           role="status"
           aria-live="polite"
-          className={`text-sm ${state.status === "error" ? "text-red-600 dark:text-red-400" : "text-muted"}`}
+          className={`text-sm ${state.status === "error" ? "text-red-400" : "text-muted"}`}
         >
           {state.message}
         </p>
@@ -90,11 +95,13 @@ export function ContactForm() {
 function Field({
   id,
   label,
+  hint,
   error,
   children,
 }: {
   id: string;
   label: string;
+  hint?: string;
   error?: string;
   children: React.ReactNode;
 }) {
@@ -104,8 +111,13 @@ function Field({
         {label}
       </label>
       {children}
+      {hint ? (
+        <p id={`${id}-hint`} className="text-xs text-muted">
+          {hint}
+        </p>
+      ) : null}
       {error ? (
-        <p id={`${id}-error`} className="text-sm text-red-600 dark:text-red-400">
+        <p id={`${id}-error`} className="text-sm text-red-400">
           {error}
         </p>
       ) : null}

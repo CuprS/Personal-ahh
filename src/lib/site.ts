@@ -9,9 +9,13 @@ export type Idea = {
   status: "exploring" | "building" | "someday";
 };
 
-export type SocialLink = {
-  label: string;
-  href: string;
+export type BackgroundVideoConfig = {
+  /** Path of a file in /public, e.g. "/background.mp4". */
+  src: string;
+  /** e.g. "video/mp4" or "video/webm". */
+  type?: string;
+  /** Optional still image shown while the video loads. */
+  poster?: string;
 };
 
 export const site = {
@@ -47,9 +51,13 @@ export const site = {
     },
   ] satisfies Idea[],
 
+  // Where contact form messages are delivered (not shown on the site).
+  // CONTACT_TO_EMAIL in the environment overrides it.
   email: "copperstone@outlook.com",
-  phone: "(307) 333-3251",
-  // Extra links shown under Email/Phone in the contact section, e.g.
-  // { label: "LinkedIn", href: "https://www.linkedin.com/in/your-profile" }
-  socials: [] as SocialLink[],
+
+  // Short looping video that plays behind the landing page (muted, starts on its own).
+  // Put the file in /public and point to it, for example:
+  //   backgroundVideo: { src: "/background.mp4", type: "video/mp4" },
+  // Keep it short (5–15 s) and small (under ~5 MB). MP4 (H.264) plays on every device.
+  backgroundVideo: null as BackgroundVideoConfig | null,
 };

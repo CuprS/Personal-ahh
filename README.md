@@ -35,9 +35,19 @@ Open http://localhost:3000.
 
 ### Your details
 
-Everything personal (name, tagline, bio, focus areas, ideas, email, social links) lives in **`src/lib/site.ts`**. Start there.
+Everything personal (name, tagline, bio, focus areas, ideas, the inbox for the contact form, the background video) lives in **`src/lib/site.ts`**. Start there.
 
-Colours are CSS variables at the top of **`src/app/globals.css`** (with a separate dark-mode set).
+Colours are CSS variables at the top of **`src/app/globals.css`**: one dark "desert dusk" look, with a gradient from deep plum to burnt orange fixed behind every page.
+
+### Background video (landing page)
+
+A short muted video can loop behind the landing page, under a dusk-coloured scrim that keeps text readable. Put the file in `public/` (for example `public/background.mp4`), then set it in `src/lib/site.ts`:
+
+```ts
+backgroundVideo: { src: "/background.mp4", type: "video/mp4" },
+```
+
+Keep it short (5–15 s) and small (under ~5 MB); MP4 (H.264) plays on every phone and browser. It pauses for visitors who have reduced motion turned on.
 
 ### Adding a contribution
 
@@ -70,7 +80,7 @@ Delete the `example-*.mdx` files once you've added your own.
 The form posts to a Next.js Server Action (`src/app/actions/contact.ts`). That action validates the input, drops spam caught by a hidden honeypot field, and emails you through Resend.
 
 - **Local dev with no setup:** messages are printed in the terminal running `npm run dev`.
-- **To get real emails:** copy `.env.example` to `.env.local` and set `RESEND_API_KEY` and `CONTACT_TO_EMAIL`. The free Resend tier is plenty for a portfolio. To send from your own address, verify your domain in Resend and set `CONTACT_FROM_EMAIL`.
+- **To get real emails:** copy `.env.example` to `.env.local` and set `RESEND_API_KEY`. Messages go to the `email` in `src/lib/site.ts` (never shown on the site; `CONTACT_TO_EMAIL` overrides it), and hitting Reply answers the visitor at the address they typed. The free Resend tier is plenty for a portfolio. To send from your own address, verify your domain in Resend and set `CONTACT_FROM_EMAIL`.
 
 ## Deploying (Vercel)
 

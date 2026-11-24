@@ -2,28 +2,27 @@
 
 /*
  * Design tokens. Change colours here and the whole site follows.
- * Light is the default; dark kicks in from the visitor's system setting.
+ * One dark "desert dusk" look for every visitor: deep plum at the top of the screen
+ * fading to burnt orange at the bottom, with light text.
  */
 :root {
-  --background: #f7f5f0;
-  --surface: #ffffff;
-  --foreground: #16140f;
-  --muted: #6b665c;
-  --border: #e3dfd5;
-  --accent: #e4572e;
-  --accent-foreground: #ffffff;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f0e0c;
-    --surface: #1a1916;
-    --foreground: #f2efe8;
-    --muted: #a39e93;
-    --border: #2d2b26;
-    --accent: #ff7a50;
-    --accent-foreground: #16140f;
-  }
+  color-scheme: dark;
+  --background: #120d1a;
+  --surface: #1e1527;
+  --foreground: #f5ede8;
+  --muted: #b9a9b6;
+  --border: #3b2b40;
+  --accent: #ff8a5c;
+  --accent-foreground: #1a0f14;
+  --gradient-dusk: linear-gradient(180deg, #120d1a 0%, #24142a 35%, #3a1a24 70%, #5a2614 100%);
+  /* Laid over the background video so text stays readable and the dusk colours carry through. */
+  --scrim-dusk: linear-gradient(
+    180deg,
+    rgb(18 13 26 / 0.82) 0%,
+    rgb(36 20 42 / 0.72) 35%,
+    rgb(58 26 36 / 0.72) 70%,
+    rgb(90 38 20 / 0.8) 100%
+  );
 }
 
 @theme inline {
@@ -51,6 +50,19 @@ body {
 ::selection {
   background: var(--accent);
   color: var(--accent-foreground);
+}
+
+/* The gradient, fixed to the screen behind every page. The landing page's video sits above it. */
+.site-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: var(--gradient-dusk);
+}
+
+.video-scrim {
+  background: var(--scrim-dusk);
 }
 
 /* ---------- Side drawer animations (driven by Radix data-state) ---------- */

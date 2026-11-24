@@ -54,10 +54,11 @@ export async function sendContact(
 
   const { name, email, message } = parsed.data;
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.CONTACT_TO_EMAIL;
+  // Your inbox: the environment override, else the address in src/lib/site.ts (never shown on the site).
+  const to = process.env.CONTACT_TO_EMAIL || site.email;
 
   // Not configured yet: log locally so development works with zero setup.
-  if (!apiKey || !to) {
+  if (!apiKey) {
     if (process.env.NODE_ENV !== "production") {
       console.info("\n[contact] New message (email not configured, logging instead):", {
         name,
@@ -66,10 +67,10 @@ export async function sendContact(
       });
       return { status: "success", message: "Thanks! Your message is on its way." };
     }
-    console.error("[contact] RESEND_API_KEY or CONTACT_TO_EMAIL is not set.");
+    console.error("[contact] RESEND_API_KEY is not set.");
     return {
       status: "error",
-      message: `The contact form isn't set up yet. Please email ${site.email} directly.`,
+      message: "Messages can't be sent right now. Please try again later.",
       values: raw,
     };
   }
@@ -98,7 +99,7 @@ export async function sendContact(
     console.error("[contact] Failed to send:", error);
     return {
       status: "error",
-      message: `Something went wrong sending your message. You can email ${site.email} directly.`,
+      message: "Something went wrong sending your message. Please try again in a moment.",
       values: raw,
     };
   }
