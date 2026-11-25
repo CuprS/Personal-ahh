@@ -18,7 +18,7 @@ export function Hero() {
         </h1>
         <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted sm:text-xl">{site.tagline}</p>
 
-        <div className="mt-10">
+        <div className="mt-10 flex justify-center">
           <HeroButton />
         </div>
       </div>

@@ -10,7 +10,6 @@ export function FeaturedWork() {
     <Section
       id="work"
       eyebrow="Selected work"
-      title={<>Recent <em>contributions</em></>}
       action={
         <Link
           href="/contributions"
