@@ -6,11 +6,9 @@
  *    The cursor line is the mouse on devices that can hover, and the middle of the screen
  *    on touch devices. It refreshes on mouse movement, scrolling and resizing.
  *  - a sideways egg-shaped gradient with visible contour lines sits above the whole page
- *    (between the cursor and everything else). On scroll it snaps to the first word of the line
- *    just below the one halfway between the top of the screen and the cursor line (the story's
- *    second line while there is no cursor). Once the page is still, it drifts: halfway toward
- *    the middle of the line, down two lines, then on to the middle, resting there until the
- *    next scroll. Reduced-motion visitors get no drift.
+ *    (between the cursor and everything else). It is centred on the first word of the line
+ *    just below the one halfway between the top of the screen and the cursor line, or on the
+ *    story's second line while there is no cursor.
  *
  * Dots are painted on a canvas only when the layout changes. Blackout bars are plain elements
  * toggled on and off, and the egg is a small full-screen canvas, so mouse movement and
@@ -29,10 +27,6 @@ const MAX_CANVAS_PIXELS = 12000000;
 
 /** Number of contour lines in the egg gradient. */
 const EGG_RINGS = 8;
-/** The egg starts drifting this long after scrolling stops. */
-const DRIFT_DELAY_MS = 500;
-/** Each of the three drift moves takes this long. */
-const DRIFT_STEP_MS = 1000;
 
 type Box = { x: number; y: number; w: number; h: number; word: string };
 /** A visual line of text: its top, height and leftmost word box. */
@@ -229,7 +223,6 @@ export function paintDotGrid(root: HTMLElement, canvas: HTMLCanvasElement, layou
  */
 export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () => void {
   const canHover = window.matchMedia("(hover: hover)");
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const darkScheme = window.matchMedia("(prefers-color-scheme: dark)");
 
   // Blackout bars live in a layer above the canvas, one bar per word box.
@@ -255,9 +248,6 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
   let needsMeasure = true;
   let mouseY: number | null = null;
   let frame = 0;
-  let eggLine: number | null = null; // anchor line; null = pick again on the next update
-  let driftStart: number | null = null; // when the current drift began
-  let driftTimer = 0;
 
   const buildBars = (boxes: Box[]) => {
     const sorted = [...boxes].sort((a, b) => a.y - b.y);
@@ -322,74 +312,35 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
       showFrom(lo);
     }
 
-    // Egg anchor: one line below the line nearest the point halfway between the top of the
-    // screen and the cursor line (the story's first line while there is no cursor), on its
-    // first word. Picked on load, on scroll and after re-measuring, not on mouse movement.
+    // Egg: one line below the line nearest the point halfway between the top of the screen
+    // and the cursor line (the story's first line while there is no cursor), on its first word.
     const lines = layout.lines;
     if (lines.length === 0) return;
-    if (eggLine === null || eggLine >= lines.length) {
-      let middle = 0;
-      if (clientY !== null) {
-        const target = clientY / 2 - originY;
-        let best = Infinity;
-        for (let i = 0; i < lines.length; i++) {
-          const distance = Math.abs(lines[i].y + lines[i].h / 2 - target);
-          if (distance < best) {
-            best = distance;
-            middle = i;
-          }
+    let middle = 0;
+    if (clientY !== null) {
+      const target = clientY / 2 - originY;
+      let best = Infinity;
+      for (let i = 0; i < lines.length; i++) {
+        const distance = Math.abs(lines[i].y + lines[i].h / 2 - target);
+        if (distance < best) {
+          best = distance;
+          middle = i;
         }
       }
-      eggLine = Math.min(middle + 1, lines.length - 1);
     }
-    const line = eggLine;
+    const line = Math.min(middle + 1, lines.length - 1);
     const first = lines[line].first;
-
-    // Drift while the page is still (root coordinates): halfway toward the middle of the line,
-    // down two lines, then the rest of the way to the middle, where it rests until a scroll.
-    const startX = first.x + first.w / 2;
-    const startY = first.y + first.h / 2;
-    const middleX = layout.width / 2;
-    const halfX = startX + (middleX - startX) / 2;
-    const below = lines[Math.min(line + 2, lines.length - 1)];
-    const downY = below.y + below.h / 2;
-    let x = startX;
-    let y = startY;
-    let phase = "anchor";
-    if (driftStart !== null) {
-      const t = (performance.now() - driftStart) / DRIFT_STEP_MS;
-      const ease = (s: number) => (s < 0.5 ? 2 * s * s : 1 - (-2 * s + 2) ** 2 / 2); // ease in-out
-      if (t < 1) {
-        phase = "1";
-        x = startX + (halfX - startX) * ease(Math.max(0, t));
-      } else if (t < 2) {
-        phase = "2";
-        x = halfX;
-        y = startY + (downY - startY) * ease(t - 1);
-      } else if (t < 3) {
-        phase = "3";
-        x = halfX + (middleX - halfX) * ease(t - 2);
-        y = downY;
-      } else {
-        phase = "rest";
-        x = middleX;
-        y = downY;
-      }
-      if (phase !== "rest") schedule(); // keep animating
-    }
-
-    const cx = originX + x;
-    const cy = originY + y;
+    const cx = originX + first.x + first.w / 2;
+    const cy = originY + first.y + first.h / 2;
     egg.style.display = "block";
     const key = `${cx.toFixed(1)} ${cy.toFixed(1)} ${egg.clientWidth}x${egg.clientHeight}`;
     if (key !== lastEgg) {
       lastEgg = key;
       paintEgg(egg, root, cx, cy);
+      egg.dataset.anchorLine = String(line);
+      egg.dataset.anchorWord = first.word;
+      egg.dataset.center = `${cx.toFixed(1)} ${cy.toFixed(1)}`;
     }
-    egg.dataset.anchorLine = String(line);
-    egg.dataset.anchorWord = first.word;
-    egg.dataset.phase = phase;
-    egg.dataset.center = `${cx.toFixed(1)} ${cy.toFixed(1)}`;
   };
 
   const schedule = () => {
@@ -397,20 +348,6 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
   };
   const remeasure = () => {
     needsMeasure = true;
-    eggLine = null; // lines may have moved; pick the anchor again
-    schedule();
-  };
-  // Snap the egg back to its anchor and start drifting again once scrolling has stopped.
-  const restartEgg = () => {
-    eggLine = null;
-    driftStart = null;
-    clearTimeout(driftTimer);
-    if (!reduceMotion.matches) {
-      driftTimer = window.setTimeout(() => {
-        driftStart = performance.now();
-        schedule();
-      }, DRIFT_DELAY_MS);
-    }
     schedule();
   };
   const onPointerMove = (e: PointerEvent) => {
@@ -432,28 +369,25 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
   const theme = new MutationObserver(remeasure);
   theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   darkScheme.addEventListener("change", remeasure);
-  canHover.addEventListener("change", restartEgg);
-  reduceMotion.addEventListener("change", restartEgg);
+  canHover.addEventListener("change", schedule);
   document.fonts.addEventListener("loadingdone", remeasure);
   document.fonts.ready.then(remeasure);
   window.addEventListener("pointermove", onPointerMove, { passive: true });
   document.addEventListener("mouseout", onMouseOut);
-  window.addEventListener("scroll", restartEgg, { passive: true, capture: true });
+  window.addEventListener("scroll", schedule, { passive: true, capture: true });
   window.addEventListener("resize", schedule);
-  restartEgg();
+  schedule();
 
   return () => {
     if (frame) cancelAnimationFrame(frame);
-    clearTimeout(driftTimer);
     resize.disconnect();
     theme.disconnect();
     darkScheme.removeEventListener("change", remeasure);
-    canHover.removeEventListener("change", restartEgg);
-    reduceMotion.removeEventListener("change", restartEgg);
+    canHover.removeEventListener("change", schedule);
     document.fonts.removeEventListener("loadingdone", remeasure);
     window.removeEventListener("pointermove", onPointerMove);
     document.removeEventListener("mouseout", onMouseOut);
-    window.removeEventListener("scroll", restartEgg, { capture: true });
+    window.removeEventListener("scroll", schedule, { capture: true });
     window.removeEventListener("resize", schedule);
     layer.remove();
     egg.remove();
