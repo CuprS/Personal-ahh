@@ -8,7 +8,8 @@
  *  - a sideways egg-shaped gradient with visible contour lines sits above the whole page
  *    (between the cursor and everything else). It is centred on the first word of the line
  *    just above the one halfway between the top of the screen and the cursor line, or on the
- *    story's first word while there is no cursor.
+ *    story's first word while there is no cursor. Only paragraph lines count: it never
+ *    anchors on a heading such as the story's title.
  *
  * Dots are painted on a canvas only when the layout changes. Blackout bars are plain elements
  * toggled on and off, and the egg is a small full-screen canvas, so mouse movement and
@@ -28,7 +29,15 @@ const MAX_CANVAS_PIXELS = 12000000;
 /** Number of contour lines in the egg gradient. */
 const EGG_RINGS = 8;
 
-type Box = { x: number; y: number; w: number; h: number; word: string };
+type Box = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  word: string;
+  /** Part of a heading (h1–h6). The egg never anchors on headings. */
+  heading: boolean;
+};
 /** A visual line of text: its top, height and leftmost word box. */
 type Line = { y: number; h: number; first: Box };
 
@@ -37,7 +46,7 @@ export type DotGridLayout = {
   height: number;
   /** Word boxes relative to the root's padding box (unaffected by scrolling). */
   boxes: Box[];
-  /** Visual lines of the first text column, top to bottom (the egg anchors on these). */
+  /** Paragraph lines of the first text column, top to bottom (the egg anchors on these). */
   lines: Line[];
   cols: number;
   rows: number;
@@ -80,7 +89,14 @@ export function measureDotGrid(root: HTMLElement): DotGridLayout | null {
     let found = false;
     for (const r of Array.from(word.getClientRects())) {
       if (r.width < 1 || r.height < 1) continue;
-      boxes.push({ x: r.left - left, y: r.top - top, w: r.width, h: r.height, word: word.textContent ?? "" });
+      boxes.push({
+        x: r.left - left,
+        y: r.top - top,
+        w: r.width,
+        h: r.height,
+        word: word.textContent ?? "",
+        heading: word.closest("h1, h2, h3, h4, h5, h6") !== null,
+      });
       found = true;
     }
     if (found) wordsCovered++;
@@ -113,7 +129,9 @@ export function measureDotGrid(root: HTMLElement): DotGridLayout | null {
   root.dataset.gridCols = String(cols);
   root.dataset.gridRows = String(rows);
   root.dataset.gridOffset = `${offsetX} ${offsetY}`;
-  return { width, height, boxes, lines: groupLines(firstColumn), cols, rows, offsetX, offsetY };
+  // The egg anchors on paragraph lines only, never on a heading such as the story's title.
+  const anchorLines = groupLines(firstColumn.filter((b) => !b.heading));
+  return { width, height, boxes, lines: anchorLines, cols, rows, offsetX, offsetY };
 }
 
 /** Trace a sideways egg: broad on the left, narrowing to the right, centred on (cx, cy). */
