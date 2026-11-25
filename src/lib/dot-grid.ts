@@ -7,8 +7,8 @@
  *    on touch devices. It refreshes on mouse movement, scrolling and resizing.
  *  - a sideways egg-shaped gradient with visible contour lines sits above the whole page
  *    (between the cursor and everything else). It is centred on the first word of the line
- *    just below the one halfway between the top of the screen and the cursor line, or on the
- *    story's second line while there is no cursor.
+ *    just above the one halfway between the top of the screen and the cursor line, or on the
+ *    story's first word while there is no cursor.
  *
  * Dots are painted on a canvas only when the layout changes. Blackout bars are plain elements
  * toggled on and off, and the egg is a small full-screen canvas, so mouse movement and
@@ -312,8 +312,9 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
       showFrom(lo);
     }
 
-    // Egg: one line below the line nearest the point halfway between the top of the screen
-    // and the cursor line (the story's first line while there is no cursor), on its first word.
+    // Egg: one line above the line nearest the point halfway between the top of the screen
+    // and the cursor line, on its first word. It stops at the story's first line, which is
+    // also where it sits while there is no cursor.
     const lines = layout.lines;
     if (lines.length === 0) return;
     let middle = 0;
@@ -328,7 +329,7 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
         }
       }
     }
-    const line = Math.min(middle + 1, lines.length - 1);
+    const line = Math.max(0, Math.min(middle - 1, lines.length - 1));
     const first = lines[line].first;
     const cx = originX + first.x + first.w / 2;
     const cy = originY + first.y + first.h / 2;
