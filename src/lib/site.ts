@@ -54,6 +54,10 @@ export const site = {
     },
   ] satisfies Idea[],
 
+  // The single button under the headline. Blank for now; give it a label (and a link) later,
+  // e.g. { label: "See my work", href: "/contributions" }.
+  heroButton: { label: "", href: "" },
+
   // Where contact form messages are delivered (not shown on the site).
   // CONTACT_TO_EMAIL in the environment overrides it.
   email: "copperstone@outlook.com",

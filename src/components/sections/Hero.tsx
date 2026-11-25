@@ -18,19 +18,8 @@ export function Hero() {
         </h1>
         <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted sm:text-xl">{site.tagline}</p>
 
-        <div className="mt-10 flex flex-wrap gap-3">
-          <Link
-            href="/contributions"
-            className="rounded-full bg-foreground px-6 py-3 font-semibold text-background transition-transform hover:-translate-y-0.5"
-          >
-            See my work
-          </Link>
-          <Link
-            href="#contact"
-            className="rounded-full border border-border bg-surface/60 px-6 py-3 font-semibold backdrop-blur transition-[border-color,transform] hover:-translate-y-0.5 hover:border-accent"
-          >
-            Get in touch
-          </Link>
+        <div className="mt-10">
+          <HeroButton />
         </div>
       </div>
 
@@ -43,5 +32,23 @@ export function Hero() {
         <span aria-hidden className="block h-10 w-px animate-pulse bg-current" />
       </a>
     </section>
+  );
+}
+
+/** The single hero button. Set its label and link in src/lib/site.ts (heroButton). */
+function HeroButton() {
+  const { label, href } = site.heroButton;
+  const className =
+    "inline-flex h-12 min-w-40 items-center justify-center rounded-full bg-foreground px-6 font-semibold text-background transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+  // Blank for now: give it a name screen readers can announce.
+  const ariaLabel = label ? undefined : "Placeholder button";
+  return href ? (
+    <Link href={href} data-hero-button className={className} aria-label={ariaLabel}>
+      {label}
+    </Link>
+  ) : (
+    <button type="button" data-hero-button className={className} aria-label={ariaLabel}>
+      {label}
+    </button>
   );
 }
