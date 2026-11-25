@@ -13,6 +13,9 @@ export type StoryBlock = { kind: "heading" | "paragraph"; text: string };
  * Grid alignment depends on sizes being multiples of 16px (GRID_STEP): width is rounded
  * down with CSS round(), padding is 32/48px, gaps are 32px, paragraph lines are 32px and
  * heading lines are 48px.
+ *
+ * On full-width desktop screens (1280px and up) the box widens and the text flows into two
+ * equal-height columns side by side (`data-columns`); below that it is a single column.
  */
 export function DotGridStory({ blocks, credit }: { blocks: StoryBlock[]; credit?: string }) {
   const rootRef = useRef<HTMLElement>(null);
@@ -24,23 +27,29 @@ export function DotGridStory({ blocks, credit }: { blocks: StoryBlock[]; credit?
   }, []);
 
   return (
-    <figure className="mx-auto w-[round(down,100%,16px)] max-w-3xl">
+    <figure className="mx-auto w-[round(down,100%,16px)] max-w-3xl xl:max-w-none">
       <article
         ref={rootRef}
         data-dot-story
-        className="relative flex flex-col gap-8 bg-surface px-8 py-8 ring-1 ring-border sm:px-12 sm:py-12"
+        className="relative bg-surface px-8 py-8 ring-1 ring-border sm:px-12 sm:py-12"
       >
-        {blocks.map((block, i) =>
-          block.kind === "heading" ? (
-            <h2 key={i} className="font-display text-3xl leading-12 sm:text-4xl sm:leading-12">
-              <Words text={block.text} />
-            </h2>
-          ) : (
-            <p key={i} className="text-lg leading-8 sm:text-xl sm:leading-8">
-              <Words text={block.text} />
-            </p>
-          ),
-        )}
+        {/* Only the text flows into columns; the overlay layers stay outside the column flow. */}
+        <div data-columns className="space-y-8 xl:columns-2 xl:gap-16">
+          {blocks.map((block, i) =>
+            block.kind === "heading" ? (
+              <h2
+                key={i}
+                className="font-display text-3xl leading-12 break-inside-avoid break-after-avoid sm:text-4xl sm:leading-12"
+              >
+                <Words text={block.text} />
+              </h2>
+            ) : (
+              <p key={i} className="text-lg leading-8 sm:text-xl sm:leading-8">
+                <Words text={block.text} />
+              </p>
+            ),
+          )}
+        </div>
         <canvas
           ref={canvasRef}
           aria-hidden

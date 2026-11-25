@@ -37,7 +37,7 @@ export type DotGridLayout = {
   height: number;
   /** Word boxes relative to the root's padding box (unaffected by scrolling). */
   boxes: Box[];
-  /** Visual lines, top to bottom. */
+  /** Visual lines of the first text column, top to bottom (the egg anchors on these). */
   lines: Line[];
   cols: number;
   rows: number;
@@ -94,11 +94,26 @@ export function measureDotGrid(root: HTMLElement): DotGridLayout | null {
   const offsetX = (width - cols * GRID_STEP) / 2;
   const offsetY = (height - rows * GRID_STEP) / 2;
 
+  // Text columns: when the text flows into several columns (an element marked `data-columns`
+  // with a CSS column count), the egg anchors on lines of the first column only, so two
+  // columns' lines at the same height don't get mixed up.
+  const flow = root.querySelector<HTMLElement>("[data-columns]");
+  const flowStyle = flow ? getComputedStyle(flow) : null;
+  const columns = flowStyle ? parseInt(flowStyle.columnCount, 10) || 1 : 1;
+  let firstColumn = boxes;
+  if (flow && flowStyle && columns > 1) {
+    const f = flow.getBoundingClientRect();
+    const gap = parseFloat(flowStyle.columnGap) || 0;
+    const columnRight = f.left - left + (f.width - gap * (columns - 1)) / columns;
+    firstColumn = boxes.filter((b) => b.x < columnRight + gap / 2);
+  }
+
   root.dataset.wordsCovered = String(wordsCovered);
+  root.dataset.columns = String(columns);
   root.dataset.gridCols = String(cols);
   root.dataset.gridRows = String(rows);
   root.dataset.gridOffset = `${offsetX} ${offsetY}`;
-  return { width, height, boxes, lines: groupLines(boxes), cols, rows, offsetX, offsetY };
+  return { width, height, boxes, lines: groupLines(firstColumn), cols, rows, offsetX, offsetY };
 }
 
 /** Trace a sideways egg: broad on the left, narrowing to the right, centred on (cx, cy). */
