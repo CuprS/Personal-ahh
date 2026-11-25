@@ -24,7 +24,7 @@ export type BackgroundVideoConfig = {
 export const site = {
   name: "Cooper Stone",
   role: "Communications & Tech Consultant",
-  tagline: "I build things for the web and chase ideas until they turn into something real.",
+  tagline: "Creating the future of software, hardware, and communications.",
   description:
     "Portfolio of work, contributions and creative experiments. Replace this with a one-line description of yourself.",
   // Used for absolute URLs in social previews. Set to your real domain once deployed.
