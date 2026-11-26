@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { BackgroundAudio } from "@/components/BackgroundAudio";
 import { MdxContent } from "@/components/MdxContent";
 import { getContribution, getContributionSlugs } from "@/lib/content";
 
@@ -129,6 +130,8 @@ async function ContributionBody({ params }: { params: Promise<{ slug: string }> 
       </div>
 
       {meta.youtube !== undefined ? <YouTubeVideo id={meta.youtube} title={meta.title} /> : null}
+
+      {meta.backgroundAudio ? <BackgroundAudio src={meta.backgroundAudio} /> : null}
     </>
   );
 }

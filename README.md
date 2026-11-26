@@ -75,6 +75,7 @@ links:                                 # optional: extra buttons
   - label: "Try it now"
     href: "/try-now"                   # a page on this site, or a full URL
 youtube: "https://youtu.be/XXXXXXXXXXX" # optional: YouTube video below the text (unlisted is fine; "" = "Video coming soon" space)
+backgroundAudio: "/audio/song.m4a"    # optional: soft looping music, starts on the first tap/click; visitors can turn it off
 ---
 
 Write the rest in Markdown. **Bold**, lists, `code`, links, and images all work.

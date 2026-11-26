@@ -39,6 +39,8 @@ const frontmatterSchema = z.object({
   // A YouTube video for the page (an unlisted video works): its link or ID, or "" for an
   // empty "Video coming soon" space to fill in later.
   youtube: z.string().optional(),
+  // Soft looping background music for the page: a path in /public ("/audio/song.m4a").
+  backgroundAudio: z.string().startsWith("/", "Use a path in /public, like /audio/song.m4a").optional(),
 });
 
 export type ContributionMeta = {
@@ -57,6 +59,8 @@ export type ContributionMeta = {
   links: { label: string; href: string }[];
   /** YouTube video ID, "" for an empty video space, or undefined for no video section. */
   youtube?: string;
+  /** Background music path, played softly while the page is open. */
+  backgroundAudio?: string;
 };
 
 /** Turn a frontmatter date (full date or year) into sortable and display forms. */
