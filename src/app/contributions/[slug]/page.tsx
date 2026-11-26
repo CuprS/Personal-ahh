@@ -128,32 +128,50 @@ async function ContributionBody({ params }: { params: Promise<{ slug: string }> 
         <MdxContent source={body} />
       </div>
 
-      {meta.video !== undefined ? <ProjectVideo src={meta.video} poster={meta.videoPoster} /> : null}
+      {meta.youtube !== undefined ? <YouTubeVideo id={meta.youtube} title={meta.title} /> : null}
     </>
   );
 }
 
-/** The page's video, or an empty 16:9 space while `video: ""` in the frontmatter. */
-function ProjectVideo({ src, poster }: { src: string; poster?: string }) {
+/**
+ * The page's YouTube video (unlisted videos work), played through YouTube's privacy-enhanced
+ * embed, or an empty 16:9 space while `youtube: ""` in the frontmatter.
+ */
+function YouTubeVideo({ id, title }: { id: string; title: string }) {
   return (
     <section aria-label="Video" className="mt-12">
-      {src ? (
-        <video
-          data-project-video
-          src={src}
-          poster={poster}
-          controls
-          playsInline
-          preload="metadata"
-          className="aspect-video w-full rounded-2xl border border-border bg-surface object-cover"
-        />
+      {id ? (
+        <>
+          <div className="aspect-video w-full overflow-hidden rounded-2xl border border-border bg-surface">
+            <iframe
+              data-youtube-embed
+              src={`https://www.youtube-nocookie.com/embed/${id}?rel=0`}
+              title={`${title} video`}
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+              className="size-full"
+            />
+          </div>
+          <a
+            data-youtube-link
+            href={`https://www.youtube.com/watch?v=${id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-block text-sm text-muted underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Watch on YouTube ↗
+          </a>
+        </>
       ) : (
         <div
           data-video-placeholder
           className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-surface/60 text-muted"
         >
-          <svg aria-hidden viewBox="0 0 24 24" className="size-10 text-accent" fill="currentColor">
-            <path d="M8 5.5v13l11-6.5z" />
+          <svg aria-hidden viewBox="0 0 28 20" className="h-10 w-14 text-accent">
+            <rect width="28" height="20" rx="6" fill="currentColor" />
+            <path d="M11.5 6v8l7-4z" fill="var(--surface)" />
           </svg>
           <p className="text-sm">Video coming soon</p>
         </div>

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
+import { youtubeId } from "@/lib/youtube";
 
 /**
  * Contributions are MDX files in /content/contributions.
@@ -35,10 +36,9 @@ const frontmatterSchema = z.object({
       }),
     )
     .default([]),
-  // A video for the page: a path in /public ("/videos/my-project.mp4"), or "" for an empty
-  // "Video coming soon" space to fill in later.
-  video: z.string().optional(),
-  videoPoster: z.string().optional(),
+  // A YouTube video for the page (an unlisted video works): its link or ID, or "" for an
+  // empty "Video coming soon" space to fill in later.
+  youtube: z.string().optional(),
 });
 
 export type ContributionMeta = {
@@ -55,9 +55,8 @@ export type ContributionMeta = {
   url?: string;
   repo?: string;
   links: { label: string; href: string }[];
-  /** Video path, "" for an empty video space, or undefined for no video section. */
-  video?: string;
-  videoPoster?: string;
+  /** YouTube video ID, "" for an empty video space, or undefined for no video section. */
+  youtube?: string;
 };
 
 /** Turn a frontmatter date (full date or year) into sortable and display forms. */
@@ -90,7 +89,14 @@ function readContribution(slug: string): Contribution {
     );
   }
 
-  const { date, endDate, ...rest } = parsed.data;
+  const { date, endDate, youtube, ...rest } = parsed.data;
+  let youtubeVideo: string | undefined;
+  if (youtube !== undefined) {
+    youtubeVideo = youtube.trim() === "" ? "" : youtubeId(youtube) ?? undefined;
+    if (youtubeVideo === undefined) {
+      throw new Error(`Couldn't read the YouTube link "${youtube}" in content/contributions/${slug}.mdx`);
+    }
+  }
   const start = readDate(date, slug);
   // A range sorts by its end (its most recent activity) and shows "start–end".
   const dates = endDate
@@ -100,7 +106,7 @@ function readContribution(slug: string): Contribution {
       })()
     : start;
   return {
-    meta: { slug, ...rest, ...dates },
+    meta: { slug, ...rest, ...dates, youtube: youtubeVideo },
     body: content,
   };
 }

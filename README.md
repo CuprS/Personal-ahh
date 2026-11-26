@@ -74,7 +74,7 @@ repo: "https://github.com/me/project"  # optional: "View code" button
 links:                                 # optional: extra buttons
   - label: "Try it now"
     href: "/try-now"                   # a page on this site, or a full URL
-video: "/videos/my-project.mp4"        # optional: video below the text ("" = "Video coming soon" space)
+youtube: "https://youtu.be/XXXXXXXXXXX" # optional: YouTube video below the text (unlisted is fine; "" = "Video coming soon" space)
 ---
 
 Write the rest in Markdown. **Bold**, lists, `code`, links, and images all work.
