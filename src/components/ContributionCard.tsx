@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { formatDate, type ContributionMeta } from "@/lib/content";
+import type { ContributionMeta } from "@/lib/content";
 
 export function ContributionCard({ item }: { item: ContributionMeta }) {
   return (
     <article className="group relative flex h-full flex-col rounded-2xl border border-border bg-surface p-6 transition-[border-color,transform,box-shadow] hover:-translate-y-1 hover:border-accent hover:shadow-xl hover:shadow-accent/5">
-      <time dateTime={item.date} className="font-mono text-xs text-muted">
-        {formatDate(item.date)}
+      <time dateTime={item.dateTime} className="font-mono text-xs text-muted">
+        {item.dateLabel}
       </time>
       <h3 className="mt-3 text-xl font-semibold tracking-tight">
         <Link

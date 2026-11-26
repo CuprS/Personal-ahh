@@ -16,7 +16,8 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const frontmatterSchema = z.object({
   title: z.string().min(1),
-  date: z.coerce.date(),
+  // A full date (2026-10-14) or just a year (2019).
+  date: z.union([z.date(), z.string(), z.number()]),
   summary: z.string().min(1),
   tags: z.array(z.string()).default([]),
   url: z.url().optional(),
@@ -26,13 +27,31 @@ const frontmatterSchema = z.object({
 export type ContributionMeta = {
   slug: string;
   title: string;
-  /** ISO date, YYYY-MM-DD */
+  /** ISO date, YYYY-MM-DD (January 1 for year-only dates). Used for sorting. */
   date: string;
+  /** Value for <time dateTime>: the ISO date, or just the year. */
+  dateTime: string;
+  /** What visitors see: "October 2026", or "2019" for year-only dates. */
+  dateLabel: string;
   summary: string;
   tags: string[];
   url?: string;
   repo?: string;
 };
+
+/** Turn a frontmatter date (full date or year) into sortable and display forms. */
+function readDate(value: Date | string | number, slug: string) {
+  const year = typeof value === "number" ? String(value) : typeof value === "string" ? value.trim() : "";
+  if (/^\d{4}$/.test(year)) {
+    return { date: `${year}-01-01`, dateTime: year, dateLabel: year };
+  }
+  const parsed = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`Invalid date "${String(value)}" in content/contributions/${slug}.mdx`);
+  }
+  const iso = parsed.toISOString().slice(0, 10);
+  return { date: iso, dateTime: iso, dateLabel: formatDate(iso) };
+}
 
 export type Contribution = {
   meta: ContributionMeta;
@@ -52,7 +71,7 @@ function readContribution(slug: string): Contribution {
 
   const { date, ...rest } = parsed.data;
   return {
-    meta: { slug, ...rest, date: date.toISOString().slice(0, 10) },
+    meta: { slug, ...rest, ...readDate(date, slug) },
     body: content,
   };
 }

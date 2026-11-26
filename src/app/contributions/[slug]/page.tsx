@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { MdxContent } from "@/components/MdxContent";
-import { formatDate, getContribution, getContributionSlugs } from "@/lib/content";
+import { getContribution, getContributionSlugs } from "@/lib/content";
 
 // Every contribution page is fully prerendered at build time.
 export const ensureStatic = "navigation";
@@ -63,8 +63,8 @@ async function ContributionBody({ params }: { params: Promise<{ slug: string }> 
   return (
     <>
       <header className="mt-8 border-b border-border pb-10">
-        <time dateTime={meta.date} className="font-mono text-xs text-muted">
-          {formatDate(meta.date)}
+        <time dateTime={meta.dateTime} className="font-mono text-xs text-muted">
+          {meta.dateLabel}
         </time>
         <h1 className="mt-3 font-display text-4xl leading-tight sm:text-6xl">{meta.title}</h1>
         <p className="mt-5 text-lg leading-relaxed text-muted">{meta.summary}</p>
