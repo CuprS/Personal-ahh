@@ -25,7 +25,7 @@ export function Ideas() {
             <span className="font-mono text-sm text-muted">{String(i + 1).padStart(2, "0")}</span>
             <div>
               <h3 className="text-xl font-semibold tracking-tight">{idea.title}</h3>
-              <p className="mt-1 text-muted">{idea.blurb}</p>
+              {idea.blurb ? <p className="mt-1 text-muted">{idea.blurb}</p> : null}
             </div>
             <span className="inline-flex items-center gap-2 text-sm text-muted">
               <span aria-hidden className={`size-2 rounded-full ${statusDot[idea.status]}`} />

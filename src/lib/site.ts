@@ -5,7 +5,8 @@
 
 export type Idea = {
   title: string;
-  blurb: string;
+  /** Optional one-line description shown under the title. */
+  blurb?: string;
   status: "exploring" | "building" | "someday";
 };
 
@@ -50,6 +51,10 @@ export const site = {
     {
       title: "A someday project",
       blurb: "The ambitious one. Writing it down here keeps it alive.",
+      status: "someday",
+    },
+    {
+      title: "Non-static code for cybersecurity",
       status: "someday",
     },
   ] satisfies Idea[],
