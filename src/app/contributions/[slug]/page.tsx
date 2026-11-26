@@ -77,8 +77,29 @@ async function ContributionBody({ params }: { params: Promise<{ slug: string }> 
           ))}
         </div>
 
-        {meta.url || meta.repo ? (
+        {meta.url || meta.repo || meta.links.length > 0 ? (
           <div className="mt-8 flex flex-wrap gap-3">
+            {meta.links.map((link) =>
+              link.href.startsWith("/") ? (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground transition-transform hover:-translate-y-0.5"
+                >
+                  {link.label} →
+                </Link>
+              ) : (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground transition-transform hover:-translate-y-0.5"
+                >
+                  {link.label} ↗
+                </a>
+              ),
+            )}
             {meta.url ? (
               <a
                 href={meta.url}
@@ -106,6 +127,37 @@ async function ContributionBody({ params }: { params: Promise<{ slug: string }> 
       <div className="text-lg">
         <MdxContent source={body} />
       </div>
+
+      {meta.video !== undefined ? <ProjectVideo src={meta.video} poster={meta.videoPoster} /> : null}
     </>
+  );
+}
+
+/** The page's video, or an empty 16:9 space while `video: ""` in the frontmatter. */
+function ProjectVideo({ src, poster }: { src: string; poster?: string }) {
+  return (
+    <section aria-label="Video" className="mt-12">
+      {src ? (
+        <video
+          data-project-video
+          src={src}
+          poster={poster}
+          controls
+          playsInline
+          preload="metadata"
+          className="aspect-video w-full rounded-2xl border border-border bg-surface object-cover"
+        />
+      ) : (
+        <div
+          data-video-placeholder
+          className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-surface/60 text-muted"
+        >
+          <svg aria-hidden viewBox="0 0 24 24" className="size-10 text-accent" fill="currentColor">
+            <path d="M8 5.5v13l11-6.5z" />
+          </svg>
+          <p className="text-sm">Video coming soon</p>
+        </div>
+      )}
+    </section>
   );
 }

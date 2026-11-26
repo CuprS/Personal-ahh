@@ -14,14 +14,31 @@ import { z } from "zod";
 const CONTRIBUTIONS_DIR = path.join(process.cwd(), "content", "contributions");
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+const dateValue = z.union([z.date(), z.string(), z.number()]);
+
 const frontmatterSchema = z.object({
   title: z.string().min(1),
   // A full date (2026-10-14) or just a year (2019).
-  date: z.union([z.date(), z.string(), z.number()]),
+  date: dateValue,
+  // Optional end of a date range, e.g. date: 2019 and endDate: 2021 shows "2019–2021".
+  endDate: dateValue.optional(),
   summary: z.string().min(1),
   tags: z.array(z.string()).default([]),
   url: z.url().optional(),
   repo: z.url().optional(),
+  // Extra buttons: a page on this site ("/try-now") or a full URL.
+  links: z
+    .array(
+      z.object({
+        label: z.string().min(1),
+        href: z.string().refine((h) => h.startsWith("/") || URL.canParse(h), "Use a path like /try-now or a full URL"),
+      }),
+    )
+    .default([]),
+  // A video for the page: a path in /public ("/videos/my-project.mp4"), or "" for an empty
+  // "Video coming soon" space to fill in later.
+  video: z.string().optional(),
+  videoPoster: z.string().optional(),
 });
 
 export type ContributionMeta = {
@@ -31,12 +48,16 @@ export type ContributionMeta = {
   date: string;
   /** Value for <time dateTime>: the ISO date, or just the year. */
   dateTime: string;
-  /** What visitors see: "October 2026", or "2019" for year-only dates. */
+  /** What visitors see: "October 2026", "2019", or a range like "2019–2021". */
   dateLabel: string;
   summary: string;
   tags: string[];
   url?: string;
   repo?: string;
+  links: { label: string; href: string }[];
+  /** Video path, "" for an empty video space, or undefined for no video section. */
+  video?: string;
+  videoPoster?: string;
 };
 
 /** Turn a frontmatter date (full date or year) into sortable and display forms. */
@@ -69,9 +90,17 @@ function readContribution(slug: string): Contribution {
     );
   }
 
-  const { date, ...rest } = parsed.data;
+  const { date, endDate, ...rest } = parsed.data;
+  const start = readDate(date, slug);
+  // A range sorts by its end (its most recent activity) and shows "start–end".
+  const dates = endDate
+    ? (() => {
+        const end = readDate(endDate, slug);
+        return { date: end.date, dateTime: start.dateTime, dateLabel: `${start.dateLabel}–${end.dateLabel}` };
+      })()
+    : start;
   return {
-    meta: { slug, ...rest, ...readDate(date, slug) },
+    meta: { slug, ...rest, ...dates },
     body: content,
   };
 }

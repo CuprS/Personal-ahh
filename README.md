@@ -65,11 +65,16 @@ Create a new file in `content/contributions/`. The file name becomes the URL:
 ```mdx
 ---
 title: "My project"
-date: 2026-11-01
+date: 2026-11-01            # or just a year: 2019
+endDate: 2027               # optional: shows a range, e.g. "2019–2021"
 summary: "One or two sentences shown on the card."
 tags: ["Next.js", "Open source"]
 url: "https://my-project.com"          # optional: "Visit project" button
 repo: "https://github.com/me/project"  # optional: "View code" button
+links:                                 # optional: extra buttons
+  - label: "Try it now"
+    href: "/try-now"                   # a page on this site, or a full URL
+video: "/videos/my-project.mp4"        # optional: video below the text ("" = "Video coming soon" space)
 ---
 
 Write the rest in Markdown. **Bold**, lists, `code`, links, and images all work.
@@ -80,7 +85,7 @@ Write the rest in Markdown. **Bold**, lists, `code`, links, and images all work.
 ```
 
 Put images in `public/` (for example `public/images/`) and reference them from `/`.
-The newest three contributions show up on the landing page automatically.
+Contributions are listed newest first (a date range counts by its end). The newest three show up on the landing page automatically.
 Delete the `example-*.mdx` files once you've added your own.
 
 ## Contact form
