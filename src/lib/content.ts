@@ -39,8 +39,8 @@ const frontmatterSchema = z.object({
   // A YouTube video for the page (an unlisted video works): its link or ID, or "" for an
   // empty "Video coming soon" space to fill in later.
   youtube: z.string().optional(),
-  // Soft looping background music for the page: a path in /public ("/audio/song.m4a").
-  backgroundAudio: z.string().startsWith("/", "Use a path in /public, like /audio/song.m4a").optional(),
+  // Soft looping background music for the page: a path in /public ("/audio/song.mp3").
+  backgroundAudio: z.string().startsWith("/", "Use a path in /public, like /audio/song.mp3").optional(),
 });
 
 export type ContributionMeta = {
