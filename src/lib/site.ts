@@ -35,7 +35,7 @@ export const site = {
     "This is the About section. Write two or three short paragraphs about who you are, what you like making, and what you're looking for.",
     "Keep it human. Mention the tools you reach for, the problems you enjoy, and anything that makes your work yours.",
   ],
-  focus: ["Web apps", "Creative coding", "Open source", "UI & interaction design"],
+  focus: ["Large Databases", "Structured Communication", "Frontier Software", "Agentic Utilization"],
 
   ideas: [
     {
