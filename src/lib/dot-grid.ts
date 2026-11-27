@@ -6,10 +6,10 @@
  *    The cursor line is the mouse on devices that can hover, and the middle of the screen
  *    on touch devices. It refreshes on mouse movement, scrolling and resizing.
  *  - a sideways egg-shaped gradient with visible contour lines sits above the whole page
- *    (between the cursor and everything else). It is centred on the first word of the line
- *    just above the one halfway between the top of the screen and the cursor line, or on the
- *    story's first word while there is no cursor. Only paragraph lines count: it never
- *    anchors on a heading such as the story's title.
+ *    (between the cursor and everything else), wide enough to reach past the end of the text.
+ *    It is centred on the first word of the line just above the one halfway between the top of
+ *    the screen and the cursor line, or on the story's first word while there is no cursor.
+ *    Only paragraph lines count: it never anchors on a heading such as the story's title.
  *
  * Dots are painted on a canvas only when the layout changes. Blackout bars are plain elements
  * toggled on and off, and the egg is a small full-screen canvas, so mouse movement and
@@ -48,6 +48,8 @@ export type DotGridLayout = {
   boxes: Box[];
   /** Paragraph lines of the first text column, top to bottom (the egg anchors on these). */
   lines: Line[];
+  /** Right edge of the rightmost word, in root coordinates. */
+  textRight: number;
   cols: number;
   rows: number;
   offsetX: number;
@@ -131,7 +133,8 @@ export function measureDotGrid(root: HTMLElement): DotGridLayout | null {
   root.dataset.gridOffset = `${offsetX} ${offsetY}`;
   // The egg anchors on paragraph lines only, never on a heading such as the story's title.
   const anchorLines = groupLines(firstColumn.filter((b) => !b.heading));
-  return { width, height, boxes, lines: anchorLines, cols, rows, offsetX, offsetY };
+  const textRight = boxes.reduce((right, b) => Math.max(right, b.x + b.w), 0);
+  return { width, height, boxes, lines: anchorLines, textRight, cols, rows, offsetX, offsetY };
 }
 
 /** Trace a sideways egg: broad on the left, narrowing to the right, centred on (cx, cy). */
@@ -150,7 +153,14 @@ function eggPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, a: numbe
  * Paint the egg gradient on a full-screen canvas: banded fills that build up toward the centre,
  * plus a visible contour line around each band. (cx, cy) are viewport coordinates.
  */
-export function paintEgg(canvas: HTMLCanvasElement, colorSource: Element, cx: number, cy: number): void {
+export function paintEgg(
+  canvas: HTMLCanvasElement,
+  colorSource: Element,
+  cx: number,
+  cy: number,
+  /** The outer ring reaches at least this far to the right (e.g. past the end of the text). */
+  minReach = 0,
+): void {
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
   if (width === 0 || height === 0) return;
@@ -166,9 +176,13 @@ export function paintEgg(canvas: HTMLCanvasElement, colorSource: Element, cx: nu
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
-  // Wide and low: about three times as wide as it is tall.
-  const a = Math.min(900, Math.max(300, width * 0.55)); // outer horizontal radius
-  const b = Math.min(560, Math.max(220, width * 0.35)) * 0.5; // outer vertical radius
+  // Wide and low: about three times as wide as it is tall. When the text reaches further than
+  // that, the egg widens to take it all in and grows taller in proportion, keeping its shape.
+  const baseA = Math.min(900, Math.max(300, width * 0.55));
+  const baseB = Math.min(560, Math.max(220, width * 0.35)) * 0.5;
+  const a = Math.max(baseA, minReach); // outer horizontal radius
+  const b = baseB * (a / baseA); // outer vertical radius
+  canvas.dataset.radius = `${a.toFixed(1)} ${b.toFixed(1)}`;
   ctx.fillStyle = ctx.strokeStyle = cssColor(colorSource, "--accent", "#ff8a5c");
 
   // Gradient: each band adds a little colour, so it deepens toward the word.
@@ -367,10 +381,12 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
     const cx = originX + first.x + first.w / 2;
     const cy = originY + first.y + first.h / 2;
     egg.style.display = "block";
-    const key = `${cx.toFixed(1)} ${cy.toFixed(1)} ${egg.clientWidth}x${egg.clientHeight}`;
+    // Reach past the end of the text (both columns on wide screens) by a few grid steps.
+    const reach = originX + layout.textRight - cx + GRID_STEP * 3;
+    const key = `${cx.toFixed(1)} ${cy.toFixed(1)} ${reach.toFixed(1)} ${egg.clientWidth}x${egg.clientHeight}`;
     if (key !== lastEgg) {
       lastEgg = key;
-      paintEgg(egg, root, cx, cy);
+      paintEgg(egg, root, cx, cy, reach);
       egg.dataset.anchorLine = String(line);
       egg.dataset.anchorWord = first.word;
       egg.dataset.center = `${cx.toFixed(1)} ${cy.toFixed(1)}`;
