@@ -59,6 +59,10 @@ export const site = {
     },
   ] satisfies Idea[],
 
+  // The three "Selected work" boxes on the front page, left to right. Each is a contribution's
+  // file name (content/contributions/<name>.mdx), or "latest" for the newest one not already shown.
+  featuredWork: ["latest", "sakun-project", "latest"] as string[],
+
   // The single button under the headline. Blank for now; give it a label (and a link) later,
   // e.g. { label: "See my work", href: "/contributions" }.
   heroButton: { label: "", href: "" },

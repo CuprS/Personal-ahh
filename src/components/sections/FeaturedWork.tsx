@@ -1,10 +1,27 @@
 import Link from "next/link";
 import { ContributionCard } from "@/components/ContributionCard";
 import { Section } from "@/components/Section";
-import { getAllContributions } from "@/lib/content";
+import { getAllContributions, type ContributionMeta } from "@/lib/content";
+import { site } from "@/lib/site";
+
+/** The boxes listed in site.featuredWork: named contributions where given, the newest others elsewhere. */
+function featuredContributions(): ContributionMeta[] {
+  const all = getAllContributions();
+  const named = new Set(site.featuredWork.filter((slot) => slot !== "latest"));
+  const newestOthers = all.filter((item) => !named.has(item.slug));
+  return site.featuredWork.flatMap((slot) => {
+    if (slot === "latest") {
+      const next = newestOthers.shift();
+      return next ? [next] : [];
+    }
+    const item = all.find((c) => c.slug === slot);
+    if (!item) throw new Error(`site.featuredWork lists "${slot}", but content/contributions/${slot}.mdx doesn't exist`);
+    return [item];
+  });
+}
 
 export function FeaturedWork() {
-  const latest = getAllContributions().slice(0, 3);
+  const featured = featuredContributions();
 
   return (
     <Section
@@ -19,9 +36,9 @@ export function FeaturedWork() {
         </Link>
       }
     >
-      {latest.length > 0 ? (
+      {featured.length > 0 ? (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {latest.map((item) => (
+          {featured.map((item) => (
             <ContributionCard key={item.slug} item={item} />
           ))}
         </div>
