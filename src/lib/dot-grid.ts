@@ -10,6 +10,8 @@
  *    It is centred on the first word of the line just above the one halfway between the top of
  *    the screen and the cursor line, or on the story's first word while there is no cursor.
  *    Only paragraph lines count: it never anchors on a heading such as the story's title.
+ *    It is cut away over any element marked `data-egg-clear` (such as the survey under the
+ *    story), so those stay untouched by it.
  *
  * Dots are painted on a canvas only when the layout changes. Blackout bars are plain elements
  * toggled on and off, and the egg is a small full-screen canvas, so mouse movement and
@@ -160,6 +162,8 @@ export function paintEgg(
   cy: number,
   /** The outer ring reaches at least this far to the right (e.g. past the end of the text). */
   minReach = 0,
+  /** Viewport boxes to leave untouched: the egg is cut away over each one. */
+  clear: ClearBox[] = [],
 ): void {
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
@@ -200,7 +204,26 @@ export function paintEgg(
     eggPath(ctx, cx, cy, (a * i) / EGG_RINGS, (b * i) / EGG_RINGS);
     ctx.stroke();
   }
+  // Cut the egg away over the boxes it must leave alone (1px wider for their outline).
   ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "destination-out";
+  for (const box of clear) ctx.fillRect(box.x - 1, box.y - 1, box.w + 2, box.h + 2);
+  ctx.globalCompositeOperation = "source-over";
+}
+
+/** A box in viewport coordinates. */
+export type ClearBox = { x: number; y: number; w: number; h: number };
+
+/** The on-screen boxes of every `data-egg-clear` element (hidden ones are skipped). */
+function eggClearBoxes(): ClearBox[] {
+  const boxes: ClearBox[] = [];
+  for (const el of document.querySelectorAll("[data-egg-clear]")) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < window.innerHeight) {
+      boxes.push({ x: r.left, y: r.top, w: r.width, h: r.height });
+    }
+  }
+  return boxes;
 }
 
 /** Paint the margin grid and the dots on every word. */
@@ -383,10 +406,12 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
     egg.style.display = "block";
     // Reach past the end of the text (both columns on wide screens) by a few grid steps.
     const reach = originX + layout.textRight - cx + GRID_STEP * 3;
-    const key = `${cx.toFixed(1)} ${cy.toFixed(1)} ${reach.toFixed(1)} ${egg.clientWidth}x${egg.clientHeight}`;
+    const clear = eggClearBoxes();
+    const clearKey = clear.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)},${c.w.toFixed(1)},${c.h.toFixed(1)}`).join(";");
+    const key = `${cx.toFixed(1)} ${cy.toFixed(1)} ${reach.toFixed(1)} ${egg.clientWidth}x${egg.clientHeight} ${clearKey}`;
     if (key !== lastEgg) {
       lastEgg = key;
-      paintEgg(egg, root, cx, cy, reach);
+      paintEgg(egg, root, cx, cy, reach, clear);
       egg.dataset.anchorLine = String(line);
       egg.dataset.anchorWord = first.word;
       egg.dataset.center = `${cx.toFixed(1)} ${cy.toFixed(1)}`;
@@ -416,6 +441,9 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
 
   const resize = new ResizeObserver(remeasure);
   resize.observe(root);
+  // Boxes the egg stays off: repaint when one changes size (e.g. a message appears in it).
+  const clearResize = new ResizeObserver(schedule);
+  document.querySelectorAll("[data-egg-clear]").forEach((el) => clearResize.observe(el));
   const theme = new MutationObserver(remeasure);
   theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   darkScheme.addEventListener("change", remeasure);
@@ -431,6 +459,7 @@ export function watchDotGrid(root: HTMLElement, canvas: HTMLCanvasElement): () =
   return () => {
     if (frame) cancelAnimationFrame(frame);
     resize.disconnect();
+    clearResize.disconnect();
     theme.disconnect();
     darkScheme.removeEventListener("change", remeasure);
     canHover.removeEventListener("change", schedule);

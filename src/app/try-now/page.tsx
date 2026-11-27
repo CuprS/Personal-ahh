@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DotGridStory } from "@/components/DotGridStory";
 import { PageIntro } from "@/components/PageIntro";
+import { StorySurvey } from "@/components/StorySurvey";
 import { story } from "./story";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function TryNowPage() {
 
       <div className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-8">
         <DotGridStory blocks={story} credit="Translated by Cooper Stone, 2020" />
+        <StorySurvey />
       </div>
     </>
   );

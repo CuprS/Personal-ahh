@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { site } from "@/lib/site";
+import { emailOwner } from "@/lib/email";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Please add your name.").max(100, "That name is a bit long."),
@@ -53,56 +53,26 @@ export async function sendContact(
   }
 
   const { name, email, message } = parsed.data;
-  const apiKey = process.env.RESEND_API_KEY;
-  // Your inbox: the environment override, else the address in src/lib/site.ts (never shown on the site).
-  const to = process.env.CONTACT_TO_EMAIL || site.email;
+  // To your inbox, with the visitor's address as the reply-to.
+  const result = await emailOwner("contact", {
+    subject: `New message from ${name}`,
+    text: `From: ${name} <${email}>\n\n${message}`,
+    replyTo: email,
+  });
 
-  // Not configured yet: log locally so development works with zero setup.
-  if (!apiKey) {
-    if (process.env.NODE_ENV !== "production") {
-      console.info("\n[contact] New message (email not configured, logging instead):", {
-        name,
-        email,
-        message,
-      });
-      return { status: "success", message: "Thanks! Your message is on its way." };
-    }
-    console.error("[contact] RESEND_API_KEY is not set.");
+  if (result === "unavailable") {
     return {
       status: "error",
       message: "Messages can't be sent right now. Please try again later.",
       values: raw,
     };
   }
-
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: process.env.CONTACT_FROM_EMAIL || "Portfolio <onboarding@resend.dev>",
-        to: [to],
-        reply_to: email,
-        subject: `New message from ${name}`,
-        text: `From: ${name} <${email}>\n\n${message}`,
-      }),
-    });
-
-    if (!res.ok) {
-      console.error("[contact] Resend error:", res.status, await res.text());
-      throw new Error(`Resend responded with ${res.status}`);
-    }
-  } catch (error) {
-    console.error("[contact] Failed to send:", error);
+  if (result === "failed") {
     return {
       status: "error",
       message: "Something went wrong sending your message. Please try again in a moment.",
       values: raw,
     };
   }
-
   return { status: "success", message: "Thanks! Your message is on its way." };
 }
